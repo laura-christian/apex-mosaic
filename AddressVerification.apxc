@@ -1,0 +1,98 @@
+public class AddressVerification {
+
+    // Uses ZipCodeAPI.com (free API) to match city to valid zip codes for that city
+    public static Boolean isValidZip(List<String> addressParts) {
+        
+		Boolean isValid = true;        
+        String apiKey = '';
+        String city = String.join(addressParts[1].split('\\s+'), '%20');
+        String state = addressParts[2];
+        String zip = addressParts[3];
+        
+        // Run a quick validation on zip code to ensure it has correct number of digits, etc. 
+        if (!DataQualityUtilities.isValidUSZip(zip)) {
+            isValid = false;
+            return isValid;
+        }
+
+		String requestEndpoint = 'https://www.zipcodeapi.com/rest/';
+        requestEndpoint += apiKey + '/city-zips.json/';
+		requestEndpoint += city + '/';
+        requestEndpoint += state;
+        System.debug(requestEndpoint);
+		
+		Http http = new Http();
+		HttpRequest request = new HttpRequest();
+		request.setEndpoint(requestEndpoint);
+		request.setMethod('GET');
+		HttpResponse response = http.send(request);
+
+		// If the request is successful, parse the JSON response.
+		if (response.getStatusCode() == 200) {
+			String s = response.getBody();
+            System.debug(s);
+			Map<String, Object> mappedJSON = (Map<String, Object>)JSON.deserializeUntyped(s);
+            List<Object> listZipCodes = (List<Object>)mappedJSON.get('zip_codes');
+            List<String> validZipCodes = new List<String>();
+            for (Object zipCode : listZipCodes) {
+                validZipCodes.add(String.valueOf(zipCode));
+            }
+            System.debug(validZipCodes);
+            if (!validZipCodes.contains(zip.substring(0,5))) {
+                isValid = false;
+            }
+            return isValid;
+		}
+        else {return null;}     
+    } 
+    
+    // Address verification: uses SmartyStreets API to validate address and convert to standard USPS format
+    public static List<String> addressValidationStandardization(List<String> addressParts) {
+        // Encode spaces with '%20' to allow strings to be sent as parameters to API; encode '#'
+        // sign associated with any apt or suite numbers with '%23'
+        String street = addressParts[0].replace('#', '%23');
+		street = String.join(street.split('\\s+'), '%20');	       
+        String city = String.join(addressParts[1].split('\\s+'), '%20');
+        String state = addressParts[2];
+        String zip = addressParts[3];
+		       
+        String apiKey = '';
+        String authToken = 'ddCqtO83Hp1Nu4xB9v3Y';
+
+		String requestEndpoint = 'https://us-street.api.smartystreets.com/street-address';
+        requestEndpoint += '?auth-id=' + apiKey;
+		requestEndpoint += '&auth-token=' + authToken;
+        requestEndpoint += '&candidates=10';
+		requestEndpoint += '&street=' + street;
+		requestEndpoint += '&city=' + city;
+        requestEndpoint += '&state=' + state;
+        requestEndpoint += '&zipcode=' + zip;
+        System.debug(requestEndpoint);
+		
+		Http http = new Http();
+		HttpRequest request = new HttpRequest();
+		request.setEndpoint(requestEndpoint);
+		request.setMethod('GET');
+		HttpResponse response = http.send(request);
+
+		// If the request is successful, parse the JSON response.
+		if (response.getStatusCode() == 200) {
+			String s = response.getBody();
+            System.debug(s);
+            if (s == '[]') {return null;}
+            else {
+                // API returns a JSON list instead of an object; remove brackets in order to parse as regular JSON object
+                s = s.removeStart('[');
+                s.removeEnd(']');
+                System.debug(s);
+                List<String> verifiedAddrParts = ParseSmartyStreetsJSON.parseSmartyStreets(s);
+                System.debug(verifiedAddrParts);
+                return verifiedAddrParts;
+            }
+		} 
+        else {
+            return null;
+		}        
+    }   
+    
+}

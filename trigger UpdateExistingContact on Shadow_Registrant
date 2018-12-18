@@ -1,0 +1,82 @@
+trigger UpdateExistingContact on Shadow_Registrant_Record__c (after insert) {
+    
+    // Map master Contact Ids to shadow record Ids
+    Map<Id,Id> ContactsToShadowRecsMap = new Map<Id,Id>();
+    for (Shadow_Registrant_Record__c shadowReg : Trigger.New) {
+        ContactsToShadowRecsMap.put(shadowReg.Existing_Contact_Name__c, shadowReg.Id);
+    }
+    
+ 
+    // Instantiate list of contacts to update before looping over map
+    List<Contact> contactsToUpdate = new List<Contact>();
+      
+    for (Contact existingContact: [SELECT Id, Name, AccountId, Lead_Source_Contact__c, Person_Type__c, Race__c, Suffix__c FROM Contact WHERE Id IN: ContactsToShadowRecsMap.keySet()]) {
+        Id shadowRecId = ContactsToShadowRecsMap.get(existingContact.Id);
+        Shadow_Registrant_Record__c shadowReg = Trigger.newMap.get(shadowRecId);
+        if (shadowReg.Email__c != null) {
+            existingContact.Email = shadowReg.Email__c;
+        }
+        if (shadowReg.Home_Phone__c != null) {
+            existingContact.HomePhone = shadowReg.Home_Phone__c;
+        }
+        if (shadowReg.Household__c != null) {existingContact.AccountId = shadowReg.Household__c;}
+        if (shadowReg.Intro_to_Mosaic__c != null) {
+            existingContact.Initial_Contact_Details__c = shadowReg.Intro_to_Mosaic__c;
+        }
+        if (shadowReg.Lead_Source_Contact__c != null) {existingContact.Lead_Source_Contact__c = shadowReg.Lead_Source_Contact__c;}
+        if (shadowReg.Mailing_City__c != null) {
+            existingContact.MailingCity = shadowReg.Mailing_City__c;
+        }
+        if (shadowReg.Mailing_State__c != null) {
+            existingContact.MailingState = shadowReg.Mailing_State__c;
+        }
+        if (shadowReg.Mailing_Street__c != null) {
+            existingContact.MailingStreet = shadowReg.Mailing_Street__c;
+            System.debug(shadowReg.Mailing_Street__c);
+        }
+        if (shadowReg.Zip_Code__c != null) {
+            existingContact.MailingPostalCode = shadowReg.Zip_Code__c;
+        }
+        if (shadowReg.Mobile_Phone__c != null) {
+            existingContact.MobilePhone = shadowReg.Mobile_Phone__c;
+        }
+        if (shadowReg.Nickname__c != null) {
+            existingContact.Nickname__c = shadowReg.Nickname__c;
+        }
+        if (shadowReg.Person_Type__c != null && existingContact.Person_Type__c != null) {
+            List<String> priorPTypes = existingContact.Person_Type__c.split(';');
+            if (!priorPTypes.contains(shadowReg.Person_Type__c)) {
+                existingContact.Person_Type__c = existingContact.Person_Type__c + '; ' + shadowReg.Person_Type__c;
+            }
+        }
+        else if (shadowReg.Person_Type__c != null && existingContact.Person_Type__c == null) {existingContact.Person_Type__c = shadowReg.Person_Type__c;}
+        if (shadowReg.Race__c != null) {existingContact.Race__c = shadowReg.Race__c;}
+        if (shadowReg.Suffix__c != null) {existingContact.Suffix__c = shadowReg.Suffix__c;}
+        if (shadowReg.Why_YLP__c != null) {
+            existingContact.Why_YLP__c = shadowReg.Why_YLP__c;
+            existingContact.Identity__c = shadowReg.YL_Identity__c;
+            existingContact.Contribute_YLP__c = shadowReg.YL_Contribute__c;
+            existingContact.Experience_Camp_YLP__c = shadowReg.YL_Experience_Camps__c;
+            existingContact.Experience_kids_YLP__c = shadowReg.YL_Experience_Kids__c;
+            existingContact.Anything_else_YLP__c = shadowReg.YL_Anything_Else__c;
+            existingContact.Peace_YLP__c = shadowReg.YL_Peace__c;
+            existingContact.Prejudice_YLP__c = shadowReg.YL_Prejudice__c;
+            existingContact.Attended_Youth_Leader_Training__c = shadowReg.YL_Training_Needed__c;
+        }
+        if (shadowReg.Work_Email__c != null) {
+            existingContact.Work_Email__c = shadowReg.Work_Email__c;
+        }
+        if (shadowReg.Work_Phone__c != null) {
+            existingContact.Phone = shadowReg.Work_Phone__c;
+        }
+        if (shadowReg.Work_Phone_Extension__c != null) {
+            existingContact.Work_Phone_Extension__c = shadowReg.Work_Phone_Extension__c;
+        }
+        contactsToUpdate.add(existingContact);
+    }
+    if (!contactsToUpdate.isEmpty()) {
+        Database.update(contactsToUpdate);        
+    }
+
+
+}
