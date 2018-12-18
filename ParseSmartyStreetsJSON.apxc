@@ -1,22 +1,22 @@
 public class ParseSmartyStreetsJSON {
 
     public static List<String> parseSmartyStreets(String s) {
-		Map<String, Object> mappedJSON = (Map<String, Object>)JSON.deserializeUntyped(s);
+	Map<String, Object> mappedJSON = (Map<String, Object>)JSON.deserializeUntyped(s);
         List<String> verifiedAddrParts = new List<String>();
-		String street = (String)mappedJSON.get('delivery_line_1');
-		System.debug(street);
+	String street = (String)mappedJSON.get('delivery_line_1');
+	System.debug(street);
         verifiedAddrParts.add(street);
-		Map<String, Object> components = (Map<String, Object>)mappedJSON.get('components');
-		System.debug(components);
-		String city = (String)components.get('city_name');
+	Map<String, Object> components = (Map<String, Object>)mappedJSON.get('components');
+	System.debug(components);
+	String city = (String)components.get('city_name');
         System.debug(city);
         verifiedAddrParts.add(city);
-		String state = (String)components.get('state_abbreviation');
+	String state = (String)components.get('state_abbreviation');
         System.debug(state);
         verifiedAddrParts.add(state);
-		String zipcode = (String)components.get('zipcode');
+	String zipcode = (String)components.get('zipcode');
         System.debug(zipcode);
-		String plus4 = (String)components.get('plus4_code');
+	String plus4 = (String)components.get('plus4_code');
         System.debug(plus4);
         verifiedAddrParts.add(zipcode + '-' + plus4);
         return verifiedAddrParts;
