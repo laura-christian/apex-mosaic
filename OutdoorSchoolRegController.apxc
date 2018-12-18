@@ -1,0 +1,666 @@
+public without sharing class OutdoorSchoolRegController {
+
+    // Declare variables with getter and setter methods
+    public Contact registrant {get; set;}
+    public List<String> registrantRace {get; set;}
+    public Contact guardian1 {get; set;}
+    public Contact guardian2 {get; set;}
+    public String introToMosaic {get; set;}
+    public Student_Enrollment__c enrollment {get; set;}
+    public String sessionChoice1 {get; set;}
+    public String sessionChoice2 {get; set;}
+    public String sessionChoice3 {get; set;}
+    public npe4__Relationship__c relationship1 {get; set;}
+    public npe4__Relationship__c relationship2 {get; set;}    
+    public npe5__Affiliation__c affiliation {get; set;}
+    public String regType {get; set;}
+    public Medical_Form__c medform {get; set;}
+     
+    // Controller constructor - sets initial state of member variables
+    public OutdoorSchoolRegController() {      
+        String URL = (Test.isRunningTest()?'/cabinleader':Site.getPathPrefix());
+        regType = URL.substring(1);
+        if (regType == 'cabinleader') {
+            regType = 'cabin leader';
+        }     
+        // Registrant defaults
+        registrant = new Contact();
+        registrant.MailingState = 'CA';
+        registrant.MailingCountry = 'US';
+        registrant.Person_Type__c = regType;
+        if (regType == 'student' || regType == 'cabin leader') {
+            registrant.RecordTypeId = '01260000000DT8Q';
+        }
+        else {
+            registrant.RecordTypeId = '01260000000DT8V';
+        }        
+        // First guardian defaults
+        guardian1 = new Contact();
+        guardian1.MailingCountry = 'US';
+        guardian1.Person_Type__c = 'parent';
+        guardian1.RecordTypeId = '01260000000DT8a';        
+        // Second guardian defaults
+        guardian2 = new Contact();
+        guardian2.MailingState = 'CA';
+        guardian2.MailingCountry = 'USA';
+        guardian2.Person_Type__c = 'parent';
+        guardian2.RecordTypeId = '01260000000DT8a';     
+        // Enrollment defaults
+        enrollment = new Student_Enrollment__c();
+        enrollment.Role__c = regType;
+        Integer currentYear = System.Today().year();
+        String curYearString = String.valueOf(currentYear);
+        enrollment.Year__c = curYearString;
+        
+        relationship1 = new npe4__Relationship__c();
+        relationship2 = new npe4__Relationship__c();
+        affiliation = new npe5__Affiliation__c();
+        medform = new Medical_Form__c();
+    }
+
+    // The following blocks of code set SelectOption values for various picklist components on the registration site
+    public List<SelectOption> nameSuffixes {
+        get{
+            nameSuffixes = new List<SelectOption>();
+            nameSuffixes.add(new SelectOption('','Not Applicable'));
+            Schema.DescribeFieldResult fieldResult = Contact.Suffix__c.getDescribe();
+            List<Schema.PicklistEntry> pListEntry = fieldResult.getPicklistValues();
+            for( Schema.PicklistEntry f : pListEntry) {
+                nameSuffixes.add(new SelectOption(f.getLabel(), f.getValue()));
+            }
+            return nameSuffixes;
+        }
+        set;   
+    }
+
+    public List<SelectOption> genderIdentifications {
+        get{
+            genderIdentifications = new List<SelectOption>();
+            Schema.DescribeFieldResult fieldResult = Contact.Gender__c.getDescribe();
+            List<Schema.PicklistEntry> pListEntry = fieldResult.getPicklistValues();
+            for( Schema.PicklistEntry f : pListEntry) {
+                genderIdentifications.add(new SelectOption(f.getLabel(), f.getValue()));
+            }
+            return genderIdentifications;
+        }
+        set;
+    }
+    
+    public List<SelectOption> sessionDates {
+        get{
+            sessionDates = new List<SelectOption>();
+            Schema.DescribeFieldResult fieldResult = Student_Enrollment__c.Session_Dates__c.getDescribe();
+            List<Schema.PicklistEntry> pListEntry = fieldResult.getPicklistValues();
+            for( Schema.PicklistEntry f : pListEntry) {
+                sessionDates.add(new SelectOption(f.getLabel(), f.getValue()));
+            }
+            return sessionDates;
+        }
+        set;
+    }
+       
+    public List<SelectOption> racialIdentifications {
+        get{
+            racialIdentifications = new List<SelectOption>();
+            Schema.DescribeFieldResult fieldResult = Contact.Race__c.getDescribe();
+            List<Schema.PicklistEntry> pListEntry = fieldResult.getPicklistValues();
+            for( Schema.PicklistEntry f : pListEntry) {
+                racialIdentifications.add(new SelectOption(f.getLabel(), f.getValue()));
+            }       
+            return racialIdentifications;
+        }
+        set;
+    }
+    
+    public List<SelectOption> gradeLevels {
+        get{
+            gradeLevels = new List<SelectOption>();
+            gradeLevels.add(new SelectOption('4th','4th'));
+            gradeLevels.add(new SelectOption('5th','5th'));
+            gradeLevels.add(new SelectOption('6th','6th'));
+            return gradeLevels;
+        }
+        set;   
+    }
+
+    public List<SelectOption> cabinPref {
+        get{
+            cabinPref = new List<SelectOption>();
+            Schema.DescribeFieldResult fieldResult = Student_Enrollment__c.Cabin_Preference__c.getDescribe();
+            List<Schema.PicklistEntry> pListEntry = fieldResult.getPicklistValues();
+            for( Schema.PicklistEntry f : pListEntry) {
+                cabinPref.add(new SelectOption(f.getLabel(), f.getValue()));
+            }
+            return cabinPref;
+        }
+        set;
+    }
+    
+    public List<SelectOption> USStates {
+        get{               
+            USStates = new List<SelectOption>(); 
+            for (USStates__c s : USStates__c.getAll().values()) {USStates.add(new SelectOption(s.State_Code__c, s.State_Code__c));}
+            USStates.sort();                       
+            return USStates;
+        } 
+        set;
+    }
+    
+    public List<SelectOption> relationshipTypes {
+        get{
+            relationshipTypes = new List<SelectOption>();
+            relationshipTypes.add(new SelectOption('Mother','Mother'));
+            relationshipTypes.add(new SelectOption('Father','Father'));
+            relationshipTypes.add(new SelectOption('Stepmother','Stepmother'));
+            relationshipTypes.add(new SelectOption('Stepfather','Stepfather'));
+            relationshipTypes.add(new SelectOption('Guardian','Guardian'));
+            relationshipTypes.add(new SelectOption('Foster Parent','Foster Parent'));
+            relationshipTypes.add(new SelectOption('Grandmother','Grandmother'));
+            relationshipTypes.add(new SelectOption('Grandfather','Grandfather'));
+            return relationshipTypes;
+        }
+        set;
+    }
+    
+    public List<SelectOption> partnerSchools {
+        get{
+            partnerSchools = new List<SelectOption>();
+            List<Account> contractSchools = [SELECT Id, Name FROM Account WHERE Contract_School__c = true];
+            for (Account school : contractSchools) {partnerSchools.add(new SelectOption(school.Id, school.Name));}
+            return partnerSchools;
+        }
+        set;
+    }
+    
+    public List<SelectOption> highSchools {
+        get{
+            highSchools = new List<SelectOption>();
+            List<Account> hSchools = [SELECT Id, Name FROM Account WHERE School_Type__c = 'High School'];
+            for (Account school : hSchools) {highSchools.add(new SelectOption(school.Id, school.Name));}
+            return highSchools;
+        }
+        set;
+    }
+    
+    public List<SelectOption> mosaicHistory {
+        get{
+            mosaicHistory = new List<SelectOption>();
+            mosaicHistory.add(new SelectOption('New Attendee', 'No, I have never attended Mosaic\'s outdoor school before'));
+            mosaicHistory.add(new SelectOption('Alum', 'Yes, I last attended Mosaic as a child'));
+            mosaicHistory.add(new SelectOption('Returning Cabin Leader', 'Yes, I last attended Mosaic as a cabin leader'));
+            return mosaicHistory;
+        }
+        set;           
+    }
+
+    
+    public PageReference goToPage2() {
+        // Data validations
+        Boolean error = false;
+        if (registrant.Birthdate!=null && registrant.Birthdate.year()==System.today().year()) {
+            error = true;
+            registrant.Birthdate.addError('Please enter a valid birthdate');
+        }
+        if (registrant.Email!=null && DataQualityUtilities.isValidEmail(registrant.Email)==false) {
+            error = true;
+            registrant.Email.addError('Please enter a valid email address');
+        }
+        if (guardian1.Email!=null && DataQualityUtilities.isValidEmail(guardian1.Email)==false) {
+            error = true;
+            guardian1.Email.addError('Please enter a valid email address');
+        }
+        if (guardian1.Work_Email__c!=null && DataQualityUtilities.isValidEmail(guardian1.Work_Email__c)==false) {
+            error = true;
+            guardian1.Work_Email__c.addError('Please enter a valid email address');
+        }
+        if (registrant.MobilePhone!=null && DataQualityUtilities.isValidPhoneNumber(registrant.MobilePhone)==false) {
+            error = true;
+            registrant.MobilePhone.addError('Please enter a valid 10-digit phone number');
+        }
+        if (guardian1.MobilePhone!=null && DataQualityUtilities.isValidPhoneNumber(guardian1.MobilePhone)==false) {
+            error = true;
+            guardian1.MobilePhone.addError('Please enter a valid 10-digit phone number');
+        }
+        if (guardian1.Phone!=null && DataQualityUtilities.isValidPhoneNumber(guardian1.Phone)==false) {
+            error = true;
+            guardian1.Phone.addError('Please enter a valid 10-digit phone number');
+        }
+        if (guardian1.Work_Phone_Extension__c!= null && guardian1.Work_Phone_Extension__c.length()>6) {
+            error = true;
+            guardian1.Work_Phone_Extension__c.addError('Please enter a valid extension');
+        }
+        
+        // Several layers of zip code/address validation: meant to minimize callouts to APIs with caps on http requests
+        Boolean validZip = true;
+        // First ensure zip code has correct number of digits, does not contain letters, etc.
+        if (registrant.MailingPostalCode!= null && DataQualityUtilities.isValidUSZip(registrant.MailingPostalCode)==false) {
+            validZip = false;
+            error = true;
+            registrant.MailingPostalCode.addError('Please enter a valid US zip code');
+        }       
+        List<String> address = new List<String>{registrant.MailingStreet, registrant.MailingCity, registrant.MailingState, registrant.MailingPostalCode};
+        // If zip has correct number of digits and is in proper format, check to see if it is a match for the city and state that have been entered
+        if (validZip) {
+            if (AddressVerification.isValidZip(address)==null) {
+                System.debug('There was a problem verifying the zip code with ZipCodeAPI');   
+            }
+            else if (!AddressVerification.isValidZip(address)) {
+                validZip = false;
+                error = true;
+                registrant.MailingPostalCode.addError('That zip code is not valid for the city and state you have entered; please enter a valid zip code');
+            }
+            if (validZip) {
+                // Finally, if zip code is valid for the city and state that have been entered, send address to SmartyStreets
+                // for full verification/conversion to standard USPS format
+                address = AddressVerification.addressValidationStandardization(address);
+                if (address==null) {
+                    System.debug('There was an error verifying the address with the SmartyStreetsAPI');
+                }
+                else {
+                    registrant.MailingStreet = address[0];
+                    registrant.MailingCity = address[1];
+                    registrant.MailingState = address[2];
+                    registrant.MailingPostalCode = address[3];
+                }
+            }
+        }
+        // If any errors thrown during data validation, redirect to same page
+        if (error) {
+            return null;
+        }
+        else {         
+            if (regType=='teacher') {return goToPage3();}           
+            else {
+                guardian2.MailingStreet = registrant.MailingStreet;
+                guardian2.MailingCity = registrant.MailingCity;
+                guardian2.MailingState = registrant.MailingState;
+                guardian2.MailingPostalCode = registrant.MailingPostalCode;
+                guardian2.HomePhone = registrant.HomePhone;
+                
+                PageReference page2 = new PageReference(Page.OutdoorSchoolReg2.getUrl());
+                page2.setRedirect(false);
+                return page2;
+            }
+        }
+    }
+        
+    public PageReference goToPage3() {
+        Boolean error = false;
+        if (guardian2.Email!=null && DataQualityUtilities.isValidEmail(guardian2.Email)==false) {
+            error = true;
+            guardian1.Email.addError('Please enter a valid email address');
+        }
+        if (guardian2.Work_Email__c!=null && DataQualityUtilities.isValidEmail(guardian2.Work_Email__c)==false) {
+            error = true;
+            guardian2.Work_Email__c.addError('Please enter a valid email address');
+        }
+        if (guardian2.MobilePhone!=null && DataQualityUtilities.isValidPhoneNumber(guardian2.MobilePhone)==false) {
+            error = true;
+            guardian2.MobilePhone.addError('Please enter a valid 10-digit phone number');
+        }
+        if (guardian2.Phone!=null && DataQualityUtilities.isValidPhoneNumber(guardian2.Phone)==false) {
+            error = true;
+            guardian2.Phone.addError('Please enter a valid 10-digit phone number');
+        }
+        if (guardian2.HomePhone!=null && DataQualityUtilities.isValidPhoneNumber(guardian2.HomePhone)==false) {
+            error = true;
+            guardian2.HomePhone.addError('Please enter a valid 10-digit phone number');
+        }
+        if (guardian2.Work_Phone_Extension__c!= null && guardian2.Work_Phone_Extension__c.length()>6) {
+            error = true;
+            guardian2.Work_Phone_Extension__c.addError('Please enter a valid extension');
+        }
+        
+        // If registrant is teacher or second guardian has same address as registrant, skip validation. If not, proceed through layers of validation.
+        if (guardian2.MailingStreet!=registrant.MailingStreet && regType!='teacher') {
+            Boolean validZip = true;
+            if (guardian2.MailingPostalCode!= null && DataQualityUtilities.isValidUSZip(guardian2.MailingPostalCode)==false) {
+                validZip = false;
+                error = true;
+                guardian2.MailingPostalCode.addError('Please enter a valid US zip code');
+            }           
+            List<String> address = new List<String>{guardian2.MailingStreet, guardian2.MailingCity, guardian2.MailingState, guardian2.MailingPostalCode};
+            if (validZip) {
+                if (AddressVerification.isValidZip(address)==null) {
+                    System.debug('There was a problem verifying the zip code with ZipCodeAPI');   
+                }
+                else if (!AddressVerification.isValidZip(address)) {
+                    validZip = false;
+                    error = true;
+                    guardian2.MailingPostalCode.addError('That zip code is not valid for the city and state you have entered; please enter a valid zip code');
+                }
+                if (validZip) {
+                    address = AddressVerification.addressValidationStandardization(address);
+                    if (address==null) {
+                        System.debug('There was an error verifying the address with the SmartyStreetsAPI');
+                    }
+                    else {
+                        guardian2.MailingStreet = address[0];
+                        guardian2.MailingCity = address[1];
+                        guardian2.MailingState = address[2];
+                        guardian2.MailingPostalCode = address[3];
+                    }
+                }
+            }
+        }
+        
+        PageReference page3 = new PageReference(Page.OutdoorSchoolReg3.getUrl());
+        page3.setRedirect(false);
+        return page3;
+    }
+       
+    public PageReference goToMedForm() { 
+        Boolean error = false;
+        if (registrant.Work_Email__c!=null && DataQualityUtilities.isValidEmail(registrant.Work_Email__c)==false) {
+            error = true;
+            registrant.Work_Email__c.addError('Please enter a valid email address');
+        }
+        if (registrant.Phone!=null && DataQualityUtilities.isValidPhoneNumber(registrant.Phone)==false) {
+            error = true;
+            registrant.Phone.addError('Please enter a valid 10-digit phone number');
+        }
+        if (registrant.Work_Phone_Extension__c!= null && registrant.Work_Phone_Extension__c.length()>6) {
+            error = true;
+            registrant.Work_Phone_Extension__c.addError('Please enter a valid extension');
+        }
+        
+        if (error) {
+            return null;
+        }
+        
+        PageReference medFormPage = new PageReference(Page.RegMedForm.getUrl());
+        medFormPage.setRedirect(false);
+        return medFormPage;
+    }
+    
+    public PageReference goToAgreements() { 
+        PageReference agreePage;
+        if (regType=='student') {
+            agreePage = new PageReference(Page.RegAgreeStudent.getURL());            
+        }
+        else if (regType=='cabin leader') {
+            agreePage = new PageReference(Page.RegAgreeCabinLeader.getURL());            
+        }
+        else if (regType=='teacher') {
+            agreePage = new PageReference(Page.RegAgreeTeacher.getURL());            
+        }
+        agreePage.setRedirect(false);
+        return agreePage;
+    }
+    
+    public Contact saveGuardian1() {
+        List<Contact> checkForExistingGuardRec = [SELECT Id, Name, AccountId FROM Contact WHERE FirstName=:guardian1.FirstName AND LastName=:guardian1.LastName AND RecordTypeId='01260000000DT8a' AND ((Email!=null AND Email=:guardian1.Email) OR (MobilePhone!=null AND MobilePhone=:guardian1.MobilePhone)) ORDER BY CreatedDate Desc];
+        List<Contact> checkForExistingRegRec = [SELECT Id, Name, AccountId FROM Contact WHERE FirstName=:registrant.FirstName AND LastName=:registrant.LastName AND (Birthdate!=null AND Birthdate=:registrant.Birthdate) ORDER BY CreatedDate Desc];       
+        if (checkForExistingGuardRec.size()>0) {
+            Id existingGuardRecId = checkForExistingGuardRec[0].Id;
+            Shadow_Registrant_Record__c shadowGuard = new Shadow_Registrant_Record__c();
+            shadowGuard.Existing_Contact_Name__c = existingGuardRecId;
+            shadowGuard.Name = '[autoname]';
+            shadowGuard.Suffix__c = guardian1.Suffix__c;
+            shadowGuard.Person_Type__c = guardian1.Person_Type__c;
+            shadowGuard.Email__c = guardian1.Email;
+            shadowGuard.Mobile_Phone__c = guardian1.MobilePhone;
+            shadowGuard.Work_Email__c = guardian1.Work_Email__c;
+            shadowGuard.Work_Phone__c = guardian1.Phone;
+            shadowGuard.Work_Phone_Extension__c = guardian1.Work_Phone_Extension__c;
+            shadowGuard.Home_Phone__c = registrant.HomePhone;
+            shadowGuard.Mailing_Street__c = registrant.MailingStreet;
+            shadowGuard.Mailing_City__c = registrant.MailingCity;
+            shadowGuard.Mailing_State__c = registrant.MailingState;
+            shadowGuard.Zip_Code__c = registrant.MailingPostalCode;
+            insert shadowGuard;
+            guardian1 = [SELECT Id, FirstName, LastName, Name, AccountId, Email, MobilePhone, Phone, HomePhone, Work_Phone_Extension__c, MailingStreet, MailingCity, MailingState, MailingPostalCode FROM Contact WHERE Id=:existingGuardRecId];
+            registrant.AccountId = guardian1.AccountId;
+            return guardian1;            
+        }
+        else if (checkForExistingGuardRec.isEmpty() && checkForExistingRegRec.size()>0) {
+            guardian1.AccountId = checkForExistingRegRec[0].AccountId;
+            guardian1.HomePhone = registrant.HomePhone;
+            guardian1.MailingStreet = registrant.MailingStreet;
+            guardian1.MailingCity = registrant.MailingCity;
+            guardian1.MailingState = registrant.MailingState;
+            guardian1.MailingPostalCode = registrant.MailingPostalCode;
+            insert guardian1;
+            guardian1 = [SELECT Id, FirstName, LastName, Name, AccountId, Email, MobilePhone, Phone, HomePhone, Work_Phone_Extension__c, MailingStreet, MailingCity, MailingState, MailingPostalCode FROM Contact WHERE Id=:guardian1.Id];
+            return guardian1;            
+        }
+        else {
+            guardian1.HomePhone = registrant.HomePhone;
+            guardian1.MailingStreet = registrant.MailingStreet;
+            guardian1.MailingCity = registrant.MailingCity;
+            guardian1.MailingState = registrant.MailingState;
+            guardian1.MailingPostalCode = registrant.MailingPostalCode;
+            insert guardian1;
+            guardian1 = [SELECT Id, FirstName, LastName, Name, AccountId, Email, MobilePhone, Phone, HomePhone, Work_Phone_Extension__c, MailingStreet, MailingCity, MailingState, MailingPostalCode FROM Contact WHERE Id=:guardian1.Id];
+            registrant.AccountId = guardian1.AccountId;
+            return guardian1;
+        }
+    }
+    
+    public Contact saveGuardian2() {
+        List<Contact> checkForExistingGuardRec = [SELECT Id, Name, AccountId FROM Contact WHERE FirstName=:guardian2.FirstName AND LastName=:guardian2.LastName AND RecordTypeId='01260000000DT8a' AND ((Email!=null AND Email=:guardian2.Email) OR (MobilePhone!=null AND MobilePhone=:guardian2.MobilePhone)) ORDER BY CreatedDate Desc];
+        if (checkForExistingGuardRec.size()>0) {
+            Id existingGuardRecId = checkForExistingGuardRec[0].Id;
+            registrant = [SELECT Id, Name, AccountId, Email, MobilePhone, Phone, HomePhone, Work_Phone_Extension__c, MailingStreet, MailingCity, MailingState, MailingPostalCode FROM Contact WHERE Id=:registrant.Id];
+            Shadow_Registrant_Record__c shadowGuard = new Shadow_Registrant_Record__c();
+            shadowGuard.Existing_Contact_Name__c = existingGuardRecId;
+            shadowGuard.Name = '[autoname]';
+            if (guardian2.MailingStreet==registrant.MailingStreet) {
+                shadowGuard.Household__c = registrant.AccountId;
+            }
+            shadowGuard.Suffix__c = guardian2.Suffix__c;
+            shadowGuard.Person_Type__c = guardian2.Person_Type__c;
+            shadowGuard.Email__c = guardian2.Email;
+            shadowGuard.Mobile_Phone__c = guardian2.MobilePhone;
+            shadowGuard.Work_Email__c = guardian2.Work_Email__c;
+            shadowGuard.Work_Phone__c = guardian2.Phone;
+            shadowGuard.Work_Phone_Extension__c = guardian2.Work_Phone_Extension__c;
+            shadowGuard.Home_Phone__c = guardian2.HomePhone;
+            shadowGuard.Mailing_Street__c = guardian2.MailingStreet;
+            shadowGuard.Mailing_City__c = guardian2.MailingCity;
+            shadowGuard.Mailing_State__c = guardian2.MailingState;
+            shadowGuard.Zip_Code__c = guardian2.MailingPostalCode;
+            insert shadowGuard;
+            guardian2 = [SELECT Id, FirstName, LastName, Name, AccountId, Email, MobilePhone, Phone, HomePhone, Work_Phone_Extension__c, MailingStreet, MailingCity, MailingState, MailingPostalCode FROM Contact WHERE Id=:existingGuardRecId];
+            return guardian2;            
+        }
+        else {
+            if (guardian2.MailingStreet == registrant.MailingStreet) {
+                guardian2.AccountId = registrant.AccountId;
+            }
+            insert guardian2;
+            guardian2 = [SELECT Id, FirstName, LastName, Name, AccountId, Email, MobilePhone, Phone, HomePhone, Work_Phone_Extension__c, MailingStreet, MailingCity, MailingState, MailingPostalCode FROM Contact WHERE Id=:guardian2.Id];
+            return guardian2;
+            }
+        }
+
+    public Contact saveRegistrant() {
+        List<Contact> checkForExistingRegRec;
+        if (regType=='teacher') {
+            checkForExistingRegRec = [SELECT Id, Name FROM Contact WHERE FirstName=:registrant.FirstName AND LastName=:registrant.LastName AND ((Email!=null AND Email=:registrant.Email) OR (MobilePhone!=null AND MobilePhone=:registrant.MobilePhone) OR (Work_Email__c!=null AND Work_Email__c=:registrant.Work_Email__c))];
+        }
+        else {
+            checkForExistingRegRec = [SELECT Id, Name FROM Contact WHERE FirstName=:registrant.FirstName AND LastName=:registrant.LastName AND (Birthdate!=null AND Birthdate=:registrant.Birthdate) ORDER BY CreatedDate Desc];
+        }
+        if (checkForExistingRegRec.size()>0) {
+            Id existingRegRecId = checkForExistingRegRec[0].Id;
+            Shadow_Registrant_Record__c shadowReg = new Shadow_Registrant_Record__c();
+            shadowReg.Existing_Contact_Name__c = existingRegRecId;
+            shadowReg.Name = '[autoname]';
+            shadowReg.Household__c = registrant.AccountId;
+            shadowReg.Suffix__c = registrant.Suffix__c;
+            shadowReg.Nickname__c = registrant.Nickname__c;
+            shadowReg.Person_Type__c = registrant.Person_Type__c;
+            shadowReg.Email__c = registrant.Email;
+            shadowReg.Mobile_Phone__c = registrant.MobilePhone;
+            shadowReg.Gender__c = registrant.Gender__c;
+            if (!registrantRace.isEmpty()) {
+                shadowReg.Race__c = String.join(registrantRace, '; ');
+            }
+            shadowReg.Home_Phone__c = registrant.HomePhone;
+            shadowReg.Mailing_Street__c = registrant.MailingStreet;
+            shadowReg.Mailing_City__c = registrant.MailingCity;
+            shadowReg.Mailing_State__c = registrant.MailingState;
+            shadowReg.Zip_Code__c = registrant.MailingPostalCode;
+            shadowReg.Intro_to_Mosaic__c = registrant.Initial_Contact_Details__c;
+            shadowReg.Why_YLP__c = registrant.Why_YLP__c;
+            shadowReg.YL_Anything_Else__c = registrant.Anything_else_YLP__c;
+            shadowReg.YL_Contribute__c = registrant.Contribute_YLP__c;
+            shadowReg.YL_Experience_Camps__c = registrant.Experience_Camp_YLP__c;
+            shadowReg.YL_Experience_Kids__c = registrant.Experience_kids_YLP__c;
+            shadowReg.YL_Identity__c = registrant.Identity__c;
+            shadowReg.YL_Peace__c = registrant.Peace_YLP__c;
+            shadowReg.YL_Prejudice__c = registrant.Prejudice_YLP__c;
+            shadowReg.YL_References__c = registrant.YLer_References__c;
+            if (regType=='cabin leader' && introToMosaic!='Returning Cabin Leader') {shadowReg.YL_Training_Needed__c=true;}
+            insert shadowReg;
+            registrant = [SELECT Id, Name, FirstName, LastName, AccountId, Email, Work_Email__c, HomePhone, MobilePhone, MailingStreet, MailingCity, MailingState, MailingPostalCode, Birthdate FROM Contact WHERE Id=:existingRegRecId];
+            return registrant;            
+        }
+        else {
+            if (regType=='cabin leader' && introToMosaic!='Returning Cabin Leader') {registrant.Attended_Youth_Leader_Training__c=true;}
+            if (!registrantRace.isEmpty()) {
+                registrant.Race__c = String.join(registrantRace, '; ');
+            }
+            insert registrant;
+            registrant = [SELECT Id, Name, FirstName, LastName, AccountId, Email, Work_Email__c, HomePhone, MobilePhone, MailingStreet, MailingCity, MailingState, MailingPostalCode, Birthdate FROM Contact WHERE Id=:registrant.Id];
+            return registrant;
+        }
+    }
+    
+    public void saveRelationship1() {
+        List<npe4__Relationship__c> checkForExistingRel = [SELECT Id FROM npe4__Relationship__c WHERE npe4__Contact__c = :registrant.Id AND npe4__RelatedContact__c = :guardian1.Id ORDER BY CreatedDate Desc];
+        if (checkForExistingRel.size()>0) {
+            relationship1 = [SELECT Id FROM npe4__Relationship__c WHERE Id=:checkForExistingRel[0].Id];
+            update relationship1;
+        }
+        else {
+            relationship1.npe4__Contact__c = registrant.Id;
+            relationship1.npe4__RelatedContact__c = guardian1.Id;
+            insert relationship1;
+        }
+    }
+    
+    public void saveRelationship2() {
+        if (guardian2.FirstName!=null) {
+            List<npe4__Relationship__c> checkForExistingRel = [SELECT Id FROM npe4__Relationship__c WHERE npe4__Contact__c = :registrant.Id AND npe4__RelatedContact__c = :guardian2.Id ORDER BY CreatedDate Desc];
+            if (checkForExistingRel.size()>0) {
+                relationship2 = [SELECT Id FROM npe4__Relationship__c WHERE Id=:checkForExistingRel[0].Id];
+                update relationship2;
+            }
+            else {
+                relationship2.npe4__Contact__c = registrant.Id;
+                relationship2.npe4__RelatedContact__c = guardian2.Id;
+                insert relationship2;
+            }
+        }
+    }
+    
+    public Student_Enrollment__c saveEnrollment() {
+        List<Student_Enrollment__c> checkForExistingEnroll = [SELECT Id FROM Student_Enrollment__c WHERE Year__c=:enrollment.Year__c AND Season__c=:enrollment.Season__c AND Enrollee_Name__c=:registrant.Id ORDER BY LastModifiedDate Desc];
+        if (checkForExistingEnroll.size()>0) {
+            delete checkForExistingEnroll;
+        }               
+        // Create training session enrollment if registrant is applying to be a cabin leader for the first time
+        if (regType=='cabin leader' && introToMosaic!='Returning Cabin Leader') {
+            Student_Enrollment__c trainingEnrollment = new Student_Enrollment__c();
+            trainingEnrollment.Name = '[autoname training]';
+            trainingEnrollment.Enrollee_Name__c = registrant.Id;
+            trainingEnrollment.Year__c = enrollment.Year__c;
+            trainingEnrollment.Season__c = enrollment.Season__c;
+            trainingEnrollment.Role__c = 'cabin leader';
+            insert trainingEnrollment;
+            System.debug('Training enrollment inserted');
+        }
+        enrollment.Name = '[autoname]';
+        enrollment.Enrollee_Name__c = registrant.Id;
+        if (regType!='teacher') {
+            if (guardian2.FirstName!=null) {
+                enrollment.Guardian_List__c = String.valueOf(guardian1.Id) + ':' + String.valueOf(guardian2.Id);
+            }
+            else {
+                enrollment.Guardian_List__c = String.valueOf(guardian1.Id) + ':';
+            }
+        }
+        if (sessionChoice1==null) {
+            enrollment.YLer_Session_Choices__c = '';
+        }
+        else if (sessionChoice1!='No Preference') {
+            enrollment.YLer_Session_Choices__c = sessionChoice1 + ', ' + sessionChoice2 + ', ' + sessionChoice3;
+        }
+        else {
+            enrollment.YLer_Session_Choices__c = 'No Preference';
+        }
+        insert enrollment;
+        return enrollment;
+    }
+    
+    public Medical_Form__c saveMedForm() {
+        List<Medical_Form__c> checkForExistingMedForm = [SELECT Id, Name FROM Medical_Form__c WHERE Student_Name__c=:registrant.Id AND Student_Enrollment__c=null];
+        if (checkForExistingMedForm.size()>0) {delete checkForExistingMedForm;}
+        medform.Student_Name__c = registrant.Id;
+        medform.Student_Enrollment__c = enrollment.Id;  
+        medform.Name = '[autoname]';
+        medform.Autosend_Confirmation_Email__c = true;
+        medform.Confirmation_Email_Address__c = guardian1.Email;
+        insert medform;
+        return medform;
+    }
+    
+    public void saveAffiliation() {
+        List<npe5__Affiliation__c> checkForExistingAffil = [SELECT Id FROM npe5__Affiliation__c WHERE npe5__Contact__c=:registrant.Id AND npe5__Organization__c=:enrollment.School__c ORDER BY CreatedDate Desc];
+        if (checkForExistingAffil.isEmpty()) {
+            affiliation.npe5__Contact__c = registrant.Id;
+            affiliation.npe5__Organization__c = enrollment.School__c;
+            affiliation.npe5__Role__c = 'Teacher';
+            affiliation.npe5__StartDate__c = System.today();
+            insert affiliation;
+        }
+    }
+    
+    public PageReference saveRegistration() {
+        if (regType=='student'){
+            if (!(medform.Expectations__c==true && medform.Parent_Agreements_Required__c==true && medform.Survey_Permission__c==true && medform.Media_Permission__c==true)) {
+                ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.ERROR,'Your agreement with all conditions is required; please check all boxes before saving'));
+                return null;
+            }
+        }
+        else if(regType=='cabin leader'){
+            if (!(medform.Expectations__c==true && medform.Youth_Leader_Specifics__c==true && medform.Youth_Leader_Contract__c==true)) {
+                ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.ERROR,'Your agreement with all conditions is required; please check all boxes before saving'));
+                return null;
+            }
+        }
+        else if(regType=='teacher'){
+            if (!(medform.Expectations__c==true && medform.Teacher_Agreements_Required__c==true && medform.Media_Permission__c==true)) {
+                ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.ERROR,'Your agreement with all conditions is required; please check all boxes before saving'));
+                return null;
+            }
+        }
+        
+        if (regType == 'student' || regType == 'cabin leader') {
+            guardian1 = saveGuardian1();
+            registrant = saveRegistrant();
+            saveRelationship1();
+            if (guardian2.FirstName!=null) {
+                guardian2 = saveGuardian2();
+                saveRelationship2();
+            }
+        }
+        else if (regType == 'teacher') {
+            registrant = saveRegistrant();
+            saveAffiliation();
+        }
+        
+        enrollment = saveEnrollment();
+        medform = saveMedform();
+
+        if (regType == 'cabin leader') {
+            regType = 'cabinleader';
+        }
+        PageReference regSum = new PageReference(URL.getSalesforceBaseUrl().toExternalForm() + Site.getPathPrefix() + '/RegSummary?m=' + medform.Id + '&t=' + regType);
+        //PageReference regSum = new PageReference(Page.RegSummary.getURL() + '?m=' + medform.Id + '&t=' + regType);
+        //regSum.setRedirect(false);
+        return regSum;
+    }
+}
